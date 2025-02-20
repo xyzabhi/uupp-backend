@@ -2,19 +2,18 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
+	"uupp-backend/database"
+	"uupp-backend/handlers"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
-	// Define a basic handler for the root path
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
-	})
+	database.ConnectDB()
+	app := fiber.New()
 
-	// Start the server on port 8080
-	fmt.Println("Server starting on port 8080...")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
-	}
+	app.Post("/register", handlers.RegisterUser)
+	app.Post("/login", handlers.LoginUser)
+	fmt.Println("Server is running on port 3005")
+	app.Listen(":3005")
 }
