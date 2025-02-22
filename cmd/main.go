@@ -7,9 +7,15 @@ import (
 	"uupp-backend/middleware"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
 
+func init() {
+	godotenv.Load()
+}
+
 func main() {
+
 	database.ConnectDB()
 	app := fiber.New()
 
@@ -18,6 +24,6 @@ func main() {
 	app.Get("/protected", middleware.AuthMiddleware, func(c *fiber.Ctx) error {
 		return c.SendString("This is a protected route")
 	})
-	fmt.Println("Server is running on port 3005")
-	app.Listen(":3005")
+	fmt.Println("Server is running on port 3006")
+	app.Listen(":3006")
 }

@@ -17,34 +17,51 @@ var jwtSecret = []byte("your-256-bit-secret")
 
 // RegisterUser handles new user registration
 func RegisterUser(c *fiber.Ctx) error {
-	// Create a new User struct to store the registration data
 	var user models.User
 
-	// Parse the request body into the user struct
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request",
 		})
 	}
 
-	// Hash the user's password before storing it
+	// Validate all required fields
+	if err := user.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// Check for unique username
+	if user.IsUsernameExists(database.DB) {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error": "Username already exists",
+		})
+	}
+
+	// Check for unique email
+	if user.IsEmailExists(database.DB) {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error": "Email already exists",
+		})
+	}
+
+	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to hash password",
 		})
 	}
-	// Store the hashed password in the user struct
 	user.Password = string(hashedPassword)
 
-	// Attempt to create the user in the database
+	// Create the user
 	if result := database.DB.Create(&user); result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create user",
 		})
 	}
 
-	// Return success message
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "User created successfully",
 	})
@@ -89,8 +106,21 @@ func LoginUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Return the JWT token to the client
+	// Create a user response without the password
+	userResponse := fiber.Map{
+		"id":        user.ID,
+		"username":  user.Username,
+		"email":     user.Email,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"dob":       user.DOB,
+		"createdAt": user.CreatedAt,
+		"updatedAt": user.UpdatedAt,
+	}
+
+	// Return both the JWT token and user data
 	return c.JSON(fiber.Map{
 		"token": tokenString,
+		"user":  userResponse,
 	})
 }

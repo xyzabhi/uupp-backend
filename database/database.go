@@ -20,14 +20,7 @@ func ConnectDB() {
 
 	DB = db
 
-	// Drop the users table if it exists
-	if DB.Migrator().HasTable(&models.User{}) {
-		if err := DB.Migrator().DropTable(&models.User{}); err != nil {
-			log.Fatal("Failed to drop users table:", err)
-		}
-	}
-
-	// Create the users table with the updated schema
+	// Auto migrate the schema
 	if err := DB.AutoMigrate(&models.User{}); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
